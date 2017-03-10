@@ -8,6 +8,9 @@
 # and wget from https://eternallybored.org/misc/wget/ 
 # Here are search strings that indicate different things.
 
+# This one holds the file name that populates our url array
+$InputFile = "urllist.txt";
+
 #This one is returned if the campaign is not found.
 $SearchStringNotFound = "Campaign Not Found";
 
@@ -17,12 +20,23 @@ $SearchStringOver = "modal-not-accepting show-initial";
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
-# Here is the array of URLs in it. Using single quotes so that the special characters do not get processed.
-@URLlist = (
-    'https://www.gofundme.com/404',
-    'https://www.gofundme.com/impeachpersky?ssid=884520528&pos=30',
-    'https://www.gofundme.com/oregon-state-trooper-wounded-1225',
-);
+
+
+sub readUrlList
+{
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error the perl has for why the file won't open.
+	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
+	
+    # Here is the array of URLs in it.
+	
+	
+    chomp(@URLlist = <LISTFILE>);
+	#closes the file
+    close LISTFILE; 
+}
+	# substitute cmd: s/x/x/; or s/insert search string/insert what you'll substitute/; 
+	# example: s/\n//;
+	# '\n' = newline character
 
 # This is a subroutine that processes each URL
 sub processURL
@@ -107,6 +121,7 @@ sub printResults
 # Here is the "main" function that does all the work
 sub main
 {
+	readUrlList();
     # This counts the number of urls.
     $urlCount = 0;
     # This loop processes all the URLs from the URLlist.
