@@ -21,22 +21,22 @@ $SearchStringOver = "modal-not-accepting show-initial";
 $tempfile = "wgetGot-";
 
 
-
 sub readUrlList
 {
-    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error the perl has for why the file won't open.
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
 	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
 	
-    # Here is the array of URLs in it.
-	
-	
+    # Here we ask the chomp command to remove the newline charcter from each line in the file. This allow wget to process the links
+    # We also set @URLlist to point at the input file's handle. The parenthesis set what will be targeted by chomp 
+    		
     chomp(@URLlist = <LISTFILE>);
 	#closes the file
     close LISTFILE; 
 }
-	# substitute cmd: s/x/x/; or s/insert search string/insert what you'll substitute/; 
-	# example: s/\n//;
-	# '\n' = newline character
+	# Alternative cmd to chomp: s/x/x/; --> s/[insert search string]/[insert what you'll substitute]/;" 
+	# example: s/\n/spock/; will replace each newline chrachter with the string 'spock'
+	# ('\n' = newline character)
+	#acording to John's Dad there are a number of cool specific cmds to this substitute cmd that allow it to do more things
 
 # This is a subroutine that processes each URL
 sub processURL
