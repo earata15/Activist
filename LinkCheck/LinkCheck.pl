@@ -43,6 +43,7 @@ sub readUrlList
 # This is a subroutine that processes each URL
 sub processURL
 {
+    #we open the file we are going to write our results to and signify we are writing to is with the '>' sign
     open OUTFILE, "> $OutputFile" or die "cantopen$OutputFile: $!";
     
     # The parameter passed in to this function is the URL being tested.
@@ -113,6 +114,7 @@ sub processURL
         # Close the file or wget can't write to it next time.
         close URLFILE;
         
+        #close the file we are writing to so you can open it outside the script
         close OUTFILE;
     }    
 
