@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# snoopy.pl
+# linkcheck.pl
 #
 # A Perl script that takes a list of URLs from an array and tests to see if the
 # Search String exists at that location.
@@ -10,6 +10,8 @@
 
 # This one holds the file name that populates our url array
 $InputFile = "urllist.txt";
+
+$OutputFile = "LinkCheckOutput.txt"
 
 #This one is returned if the campaign is not found.
 $SearchStringNotFound = "Campaign Not Found";
@@ -24,7 +26,7 @@ $tempfile = "wgetGot-";
 sub readUrlList
 {
     # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
-	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
+	open LISTFILE, "< $InputFile" or die "cantopen$InputFile: $!";
 	
     # Here we ask the chomp command to remove the newline charcter from each line in the file. This allow wget to process the links
     # We also set @URLlist to point at the input file's handle. The parenthesis set what will be targeted by chomp 
@@ -41,6 +43,8 @@ sub readUrlList
 # This is a subroutine that processes each URL
 sub processURL
 {
+    open OUTFILE, "> $OutputFile" or die "cantopen$OutputFile: $!";
+    
     # The parameter passed in to this function is the URL being tested.
     my $url = shift;
 
@@ -62,7 +66,7 @@ sub processURL
     if($?)
     {
         # We got some kind of error. Assume its 404.
-        print "Dead Link: $url\n";
+        print OUTFILE"Dead Link: $url\n";
     }
     else
     {
@@ -76,7 +80,7 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringNotFound/)
             {
-                print "Not Found: $url\n";
+                print OUTFILE"Not Found: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
@@ -86,12 +90,12 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringOver/)
             {
-                print "Over: $url\n";
+                print OUTFILE"Over: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
                 last;
-            }
+            }z
 
             if($found)
             {
@@ -103,13 +107,14 @@ sub processURL
         # If we found no match, must be active
         if(not $found)
         {
-            print "Active: $url\n";
+            print OUTFILE"Active: $url\n";
         }
 
         # Close the file or wget can't write to it next time.
         close URLFILE;
+        
+        close OUTFILE;
     }    
-}
 
 sub printResults
 {
@@ -117,6 +122,7 @@ sub printResults
     # print them here.
     print "All Done.\n";
 }
+
 
 # Here is the "main" function that does all the work
 sub main
