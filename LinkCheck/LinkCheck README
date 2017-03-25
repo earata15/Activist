@@ -1,1 +1,16 @@
-Insert text here, explanation of LinkCheck script
+ Overview:
+This script pulls hyperlinks from a text file, reads them into wget, and checks different parameters on the given links. It then categorizes those hyperlinks into 
+three (3) 
+categories. This script will eventually be able to write links in the Active category into a text document or excel file. 
+
+Details:
+To find when a campaign is over is pretty tricky. wget only gets the html from the location, but is not smart enough to run the java script that puts up the popup window. So, I tried to find the code in the html that is different that puts up the window. If the program finds the words "modal-not-accepting show-initial", then it flags that campaign as "over" and it works for the urls that you gave me, but I think I need more examples to make sure it really works.
+
+When working, the output looks like this:
+
+reed@wookie:~/People/john/code$ ./snoopy.pl
+Dead Link: https://www.gofundme.com/404
+Over: https://www.gofundme.com/impeachpersky?ssid=884520528&pos=30
+Active: https://www.gofundme.com/oregon-state-trooper-wounded-1225
+All Done.
+reed@wookie:~/People/john/code$
