@@ -17,26 +17,36 @@ $SearchStringNotFound = "Campaign Not Found";
 # This indicate the campaign is over.
 $SearchStringOver = "modal-not-accepting show-initial";
 
+
+# This line will be parsed to find out how much money the campaign has made out of their total goal
+# It looks funny because it is a regular expression... regex's are used to identify strings that match a certain pattern
+# We have to use a regex instead of an exact search string, because we don't know what the numbers are / they will be different for every URL
+#$SearchStringFunded = "<strong>\$(\d*,?\d*,?\d*)<\/strong><span class=\"smaller\">
+ #of \$(\d*,?\d*,?\d)(k?) goal<\/span>";
+$SearchStringFunded = "<h2 class=\"goal\">";
+$SearchStringFunded2 = "\$(\d*,?\d*,?\d*)";
+$SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
+
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
 
+
 sub readUrlList
 {
-    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error the perl has for why the file won't open.
 	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
 	
-    # Here we ask the chomp command to remove the newline charcter from each line in the file. This allow wget to process the links
-    # We also set @URLlist to point at the input file's handle. The parenthesis set what will be targeted by chomp 
-    		
+    # Here is the array of URLs in it.
+	
+	
     chomp(@URLlist = <LISTFILE>);
 	#closes the file
     close LISTFILE; 
 }
-	# Alternative cmd to chomp: s/x/x/; --> s/[insert search string]/[insert what you'll substitute]/;" 
-	# example: s/\n/spock/; will replace each newline chrachter with the string 'spock'
-	# ('\n' = newline character)
-	#acording to John's Dad there are a number of cool specific cmds to this substitute cmd that allow it to do more things
+	# substitute cmd: s/x/x/; or s/insert search string/insert what you'll substitute/; 
+	# example: s/\n//;
+	# '\n' = newline character
 
 # This is a subroutine that processes each URL
 sub processURL
@@ -70,6 +80,9 @@ sub processURL
         open URLFILE, "< $urlfile" or die "Could not open $urlfile: $!";
         # Assume not found
         $found = 0;
+        $goal = 0;
+        $funded = 0;
+        $totalNeeded = 0;
         # Go through the file one line at a time
         while(<URLFILE>)
         {
@@ -81,6 +94,53 @@ sub processURL
                 $found = 1;
                 # Exit the while loop.
                 last;
+            }
+
+            #this line contains the campaign's funding goal amount
+            if($goal == 2){
+                $goal = 3;
+                if(m/$SearchStringFunded3/){
+                    print "\$1 is: $1 \nand \$2 is: \n";
+                    $totalNeeded = $1;
+                    $totalNeeded +~ s/,//;
+
+                    if(length($2)>0){
+                        $totalNeeded = $totalNeeded * 1000;
+                    }
+                    if($funded>0 && $funded>=$totalNeeded){
+                        print "Campaign Fully Funded\n";
+                    }
+
+                    print $funded . " raised out of " . $totalNeeded . " goal.\n"; 
+                    } else{
+                        print "uh oh, problem with goal=2 line. here's the html for this line: " . "\n";
+                        print;
+                        print "here's the regex that tried to match and failed: \n";
+                        print $SearchStringFunded3 ."\n";
+                }
+
+            }
+
+            # this line contains the amount of money already raised
+            if($goal == 1){
+                if(m/$SearchStringFunded2/){
+                    print "\$1 is: $1\n";
+                    $funded = $1;
+                    $funded +~ s/,//;
+                    print "funded is: $funded\n";
+
+                }else{
+                    print "uh oh, problem with goal=1 line. here's the html at this line: \n";
+                    print;
+                    print "here's the regex that tried to match and failed: \n";
+                    print $SearchStringFunded2 . "\n";
+                    
+                }
+                $goal = 2;
+            }
+            # the next two lines have information about the campaign's funding after this line is found
+            if(m/$SearchStringFunded/){
+                $goal = 1;
             }
 
             # See if we can match the Not Found search string
