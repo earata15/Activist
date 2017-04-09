@@ -11,7 +11,7 @@
 # This one holds the file name that populates our url array
 $InputFile = "urllist.txt";
 
-$OutputFile = "LinkCheckOutput.txt"
+$OutputFile = "LinkCheckOutput.txt";
 
 #This one is returned if the campaign is not found.
 $SearchStringNotFound = "Campaign Not Found";
@@ -96,7 +96,7 @@ sub processURL
                 $found = 1;
                 # Exit the while loop.
                 last;
-            }z
+            }
 
             if($found)
             {
@@ -116,7 +116,8 @@ sub processURL
         
         #close the file we are writing to so you can open it outside the script
         close OUTFILE;
-    }    
+    }
+}    
 
 sub printResults
 {
