@@ -18,11 +18,11 @@ $SearchStringNotFound = "Campaign Not Found";
 $SearchStringOver = "modal-not-accepting show-initial";
 
 
-# This line will be parsed to find out how much money the campaign has made out of their total goal
-# It looks funny because it is a regular expression... regex's are used to identify strings that match a certain pattern
-# We have to use a regex instead of an exact search string, because we don't know what the numbers are / they will be different for every URL
-#$SearchStringFunded = "<strong>\$(\d*,?\d*,?\d*)<\/strong><span class=\"smaller\">
- #of \$(\d*,?\d*,?\d)(k?) goal<\/span>";
+# These regular expressions will be used to match the html lines that contain $$$ the campaign has made out of their total goal
+# $SearchStringFunded matches the html line <h2 class="goal">, which precedes the two lines with the information we want
+# $SearchStringFunded2 will match the line after that and capture the value in $1 -- total raised so far
+# $SearchStringFunded3 will match the line after that and capture the value in $1 -- total $$ goal for campaign
+
 $SearchStringFunded = "<h2 class=\"goal\">";
 $SearchStringFunded2 = "\$(\d*,?\d*,?\d*)";
 $SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
@@ -79,10 +79,10 @@ sub processURL
         # Link is good. Open the file or stop the program if we can not.
         open URLFILE, "< $urlfile" or die "Could not open $urlfile: $!";
         # Assume not found
-        $found = 0;
-        $goal = 0;
-        $funded = 0;
-        $totalNeeded = 0;
+        my $found = 0;
+        my $goal = 0;
+        my $funded = 0;
+        my $totalNeeded = 0;
         # Go through the file one line at a time
         while(<URLFILE>)
         {
@@ -96,11 +96,13 @@ sub processURL
                 last;
             }
 
-            #this line contains the campaign's funding goal amount
+            #goal of this match is to capture the campaign's total funding goal
+            #goal is an indicator variable that is set to 2 after the two other lines have already been matched,
+            # and then changed so that this snippet of code only gets run once, for the correct line in the html doc
             if($goal == 2){
                 $goal = 3;
                 if(m/$SearchStringFunded3/){
-                    print "\$1 is: $1 \nand \$2 is: \n";
+                    print "Matched: $&\n\$1 is: $1 \nand \$2 is: \n";
                     $totalNeeded = $1;
                     $totalNeeded +~ s/,//;
 
@@ -121,10 +123,13 @@ sub processURL
 
             }
 
-            # this line contains the amount of money already raised
+            # goal of this match is to capture the amount of money already raised
+            # goal is an indicator variable that was set to 1 after /$SearchStringFunded/ was matched the line before
             if($goal == 1){
+                # this is where I am having problems
+                # the following expression yields a match, but captures no value in $1
                 if(m/$SearchStringFunded2/){
-                    print "\$1 is: $1\n";
+                    print "Matched: $&\n\$1 is: $1\n";
                     $funded = $1;
                     $funded +~ s/,//;
                     print "funded is: $funded\n";
@@ -140,6 +145,7 @@ sub processURL
             }
             # the next two lines have information about the campaign's funding after this line is found
             if(m/$SearchStringFunded/){
+                print "Matched first line: $&\n";
                 $goal = 1;
             }
 
