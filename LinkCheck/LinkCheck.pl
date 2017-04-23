@@ -17,26 +17,42 @@ $SearchStringNotFound = "Campaign Not Found";
 # This indicate the campaign is over.
 $SearchStringOver = "modal-not-accepting show-initial";
 
+
+# These regular expressions will be used to match the html lines that contain $$$ the campaign has made out of their total goal
+# $SearchStringFunded matches the html line <h2 class="goal">, which precedes the two lines with the information we want
+# $SearchStringFunded2 will match the line after that and capture the value in $1 -- total raised so far
+# $SearchStringFunded3 will match the line after that and capture the value in $1 -- total $$ goal for campaign
+
+$SearchStringFunded = "<h2 class=\"goal\">";
+#$SearchStringFunded2 = "\$(\d*,?\d*,?\d*)";
+$SearchStringFunded2 = "([0-9,]+)";
+#$SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
+$SearchStringFunded3 = "([0-9,kK]+)";
+
+# used to match and find when the last donation was. We pull links that haven't received any donations in the past 2 months.
+$SearchStringDonations = "supporter js-donation-content";
+#$SearchStringDonations2 = "supporter-time"\>([\d\sa-z]+)";
+
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
 
+
 sub readUrlList
 {
-    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error the perl has for why the file won't open.
 	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
 	
-    # Here we ask the chomp command to remove the newline charcter from each line in the file. This allow wget to process the links
-    # We also set @URLlist to point at the input file's handle. The parenthesis set what will be targeted by chomp 
-    		
+    # Here is the array of URLs in it.
+	
+	
     chomp(@URLlist = <LISTFILE>);
 	#closes the file
     close LISTFILE; 
 }
-	# Alternative cmd to chomp: s/x/x/; --> s/[insert search string]/[insert what you'll substitute]/;" 
-	# example: s/\n/spock/; will replace each newline chrachter with the string 'spock'
-	# ('\n' = newline character)
-	#acording to John's Dad there are a number of cool specific cmds to this substitute cmd that allow it to do more things
+	# substitute cmd: s/x/x/; or s/insert search string/insert what you'll substitute/; 
+	# example: s/\n//;
+	# '\n' = newline character
 
 # This is a subroutine that processes each URL
 sub processURL
@@ -69,7 +85,12 @@ sub processURL
         # Link is good. Open the file or stop the program if we can not.
         open URLFILE, "< $urlfile" or die "Could not open $urlfile: $!";
         # Assume not found
-        $found = 0;
+        my $found = 0;
+        my $goal = 0;
+        my $lastDonation = 0;
+        my $donationInfo = "";
+        my $funded = 0;
+        my $totalNeeded = 0;
         # Go through the file one line at a time
         while(<URLFILE>)
         {
@@ -81,6 +102,83 @@ sub processURL
                 $found = 1;
                 # Exit the while loop.
                 last;
+            }
+
+            #goal of this match is to capture the campaign's total funding goal
+            #goal is an indicator variable that is set to 2 after the two other lines have already been matched,
+            # and then changed so that this snippet of code only gets run once, for the correct line in the html doc
+            if($goal == 2){
+                $goal = 3;
+                if(m/$SearchStringFunded3/){
+                    #print "Matched: $&\n\$1 is: $1\n";
+                    $totalNeeded = $1;
+                    $totalNeeded =~ s/,//g;
+                    $totalNeeded =~ s/[kK]/000/;
+         
+                    } else{
+                        print "uh oh, problem with goal=2 line. here's the html for this line: " . "\n";
+                        print;
+                        print "here's the regex that tried to match and failed: \n";
+                        print $SearchStringFunded3 ."\n";
+                }
+
+            }
+
+            # goal of this match is to capture the amount of money already raised
+            # goal is an indicator variable that was set to 1 after /$SearchStringFunded/ was matched the line before
+            
+            if($goal == 1){
+                if(m/$SearchStringFunded2/){
+                    #print "Matched: $&\n\$1 is: $1\n";
+                    $funded = $1;
+                    $funded =~ s/,//g;
+                    #print "funded is: $funded\n";
+
+                }else{
+                    print "uh oh, problem with goal=1 line. here's the html at this line: \n";
+                    print;
+                    print "here's the regex that tried to match and failed: \n";
+                    print $SearchStringFunded2 . "\n";
+                    
+                }
+                $goal = 2;
+            }
+
+            # the next two lines after this match have campaign's funding info; indicate by setting goal variable
+            if(($goal==0)&&(m/$SearchStringFunded/)){
+                #print "Matched first line: $&\n";
+                $goal = 1;
+            }
+
+            # capture most recent donation time, in the form of "8 days ago", "2 months ago", etc, as displayed on page
+            if(($lastDonation==1) && (m/supporter-time"\>([\d\sa-z]+)/)){
+                $lastDonation = 2;
+                my $donationTime = $1;
+                $donationInfo = "Last donation was " . $donationTime . "\n";    
+                my $good = 0;
+
+                if($donationTime =~ m/day/){
+                    $good = 1;
+                }
+                if($donationTime =~ m/month/){
+                    if($donationTime =~ m/([0-9]+)/){
+                        if($1<3){
+                            $good = 1;
+                        }
+                    }
+                }
+
+
+                if($good==1){
+                    $donationInfo = $donationInfo . "Last donation was within past three months.\n\n";
+                }else{
+                    $donationInfo = $donationInfo . "Last donation was NOT within past three months, need to remove.\n\n";
+                }
+            }
+
+            # once this line is reached we are in the donation section; set indicator variable lastDonation to 1
+            if(($lastDonation==0) && (m/$SearchStringDonations/)){
+                $lastDonation = 1;
             }
 
             # See if we can match the Not Found search string
@@ -104,6 +202,14 @@ sub processURL
         if(not $found)
         {
             print "Active: $url\n";
+            if($funded>0 && $funded>=$totalNeeded){
+                print "Campaign Fully Funded\n";
+            }else{
+                print "Campaign still needs funding. ";
+                }
+
+            print $funded . " raised out of " . $totalNeeded . " goal.\n";
+            print $donationInfo;
         }
 
         # Close the file or wget can't write to it next time.
