@@ -9,9 +9,6 @@
 # Here are search strings that indicate different things.
 
 
-
-
-
 # This one holds the file name that populates our url array
 $InputFile = "urllist.txt";
 
