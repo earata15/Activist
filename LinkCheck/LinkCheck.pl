@@ -8,10 +8,21 @@
 # and wget from https://eternallybored.org/misc/wget/ 
 # Here are search strings that indicate different things.
 
+
+
+
+
 # This one holds the file name that populates our url array
 $InputFile = "urllist.txt";
 
-$OutputFile = "LinkCheckOutput.txt";
+#this is the name of the file that will receive the results of linkcheck, sans the file extension
+$OutputFile = "LinkCheckOutput";
+
+#this is the name of the output directory that we can call or create is it doesn't exist. Createing this directory does not happen if the name is called and the directory doesn't exist. We have to do that seperatley
+$OutputDirectory = "archive/";
+
+#This is where we can add the fileextension to any files linkcheck produces
+$Extension = ".txt";
 
 #This one is returned if the campaign is not found.
 $SearchStringNotFound = "Campaign Not Found";
@@ -22,6 +33,21 @@ $SearchStringOver = "modal-not-accepting show-initial";
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
+# This subroutine calls the function localtime. This function produces 
+sub CreateTimeStamp
+{
+     #     0    1    2     3     4    5     6     7     8
+     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+
+     $year += 1900;
+
+     $mon += 1;
+
+     $TimeStamp = "$year.$mon.$mday.$hour.$min.$sec";	
+
+	 return $TimeStamp
+	 
+	 }
 
 sub readUrlList
 {
@@ -44,7 +70,10 @@ sub readUrlList
 sub processURL
 {
     #we open the file we are going to write our results to and signify we are writing to is with the '>' sign
-    open OUTFILE, "> $OutputFile" or die "cantopen$OutputFile: $!";
+	#in front of the outfile variable we are calling, we add the outputDirectory
+	#add the timestamp so that each time we call Linkcheck, then we write to a new text file
+	#be sure to add the extension variable, otherwise no .txt file will be written
+    open OUTFILE, ">> $OutputDirectory$OutputFile$TimeStamp$Extension" or die "cantopen $OutPutDirectory$OutputFile$TimeStamp$Extension: $!";
     
     # The parameter passed in to this function is the URL being tested.
     my $url = shift;
@@ -67,7 +96,7 @@ sub processURL
     if($?)
     {
         # We got some kind of error. Assume its 404.
-        print OUTFILE"Dead Link: $url\n";
+        print OUTFILE "Dead Link: $url\n";
     }
     else
     {
@@ -81,7 +110,7 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringNotFound/)
             {
-                print OUTFILE"Not Found: $url\n";
+                print OUTFILE "Not Found: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
@@ -91,7 +120,7 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringOver/)
             {
-                print OUTFILE"Over: $url\n";
+                print OUTFILE "Over: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
@@ -108,7 +137,7 @@ sub processURL
         # If we found no match, must be active
         if(not $found)
         {
-            print OUTFILE"Active: $url\n";
+            print OUTFILE "Active: $url\n";
         }
 
         # Close the file or wget can't write to it next time.
@@ -121,7 +150,8 @@ sub processURL
 
 sub printResults
 {
-    # IF you want, you can collect stats in the above loop and
+	
+	# IF you want, you can collect stats in the above loop and
     # print them here.
     print "All Done.\n";
 }
@@ -130,6 +160,10 @@ sub printResults
 # Here is the "main" function that does all the work
 sub main
 {
+	# this calls the createtimestamp subroutine and creates the timestamp variable
+	CreateTimeStamp ();
+	#mkdir creates a directory for our files to dump into
+	mkdir $OutputDirectory;
 	readUrlList();
     # This counts the number of urls.
     $urlCount = 0;
@@ -140,6 +174,7 @@ sub main
         processURL($url);
     }
     printResults();
+	
 }
 
 
