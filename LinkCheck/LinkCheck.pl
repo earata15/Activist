@@ -24,8 +24,10 @@ $SearchStringOver = "modal-not-accepting show-initial";
 # $SearchStringFunded3 will match the line after that and capture the value in $1 -- total $$ goal for campaign
 
 $SearchStringFunded = "<h2 class=\"goal\">";
-$SearchStringFunded2 = "\$(\d*,?\d*,?\d*)";
-$SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
+#$SearchStringFunded2 = "\$(\d*,?\d*,?\d*)";
+$SearchStringFunded2 = "([0-9,]+)";
+#$SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
+$SearchStringFunded3 = "([0-9,kK]+)";
 
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
@@ -102,18 +104,11 @@ sub processURL
             if($goal == 2){
                 $goal = 3;
                 if(m/$SearchStringFunded3/){
-                    print "Matched: $&\n\$1 is: $1 \nand \$2 is: \n";
+                    #print "Matched: $&\n\$1 is: $1\n";
                     $totalNeeded = $1;
-                    $totalNeeded +~ s/,//;
-
-                    if(length($2)>0){
-                        $totalNeeded = $totalNeeded * 1000;
-                    }
-                    if($funded>0 && $funded>=$totalNeeded){
-                        print "Campaign Fully Funded\n";
-                    }
-
-                    print $funded . " raised out of " . $totalNeeded . " goal.\n"; 
+                    $totalNeeded =~ s/,//g;
+                    $totalNeeded =~ s/[kK]/000/;
+         
                     } else{
                         print "uh oh, problem with goal=2 line. here's the html for this line: " . "\n";
                         print;
@@ -125,14 +120,13 @@ sub processURL
 
             # goal of this match is to capture the amount of money already raised
             # goal is an indicator variable that was set to 1 after /$SearchStringFunded/ was matched the line before
+            
             if($goal == 1){
-                # this is where I am having problems
-                # the following expression yields a match, but captures no value in $1
                 if(m/$SearchStringFunded2/){
-                    print "Matched: $&\n\$1 is: $1\n";
+                    #print "Matched: $&\n\$1 is: $1\n";
                     $funded = $1;
-                    $funded +~ s/,//;
-                    print "funded is: $funded\n";
+                    $funded =~ s/,//g;
+                    #print "funded is: $funded\n";
 
                 }else{
                     print "uh oh, problem with goal=1 line. here's the html at this line: \n";
@@ -143,9 +137,10 @@ sub processURL
                 }
                 $goal = 2;
             }
-            # the next two lines have information about the campaign's funding after this line is found
-            if(m/$SearchStringFunded/){
-                print "Matched first line: $&\n";
+
+            # the next two lines after this match have campaign's funding info; indicate by setting goal variable
+            if(($goal==0)&&(m/$SearchStringFunded/)){
+                #print "Matched first line: $&\n";
                 $goal = 1;
             }
 
@@ -170,6 +165,13 @@ sub processURL
         if(not $found)
         {
             print "Active: $url\n";
+            if($funded>0 && $funded>=$totalNeeded){
+                print "Campaign Fully Funded\n";
+            }else{
+                print "Campaign still needs funding. ";
+                }
+
+            print $funded . " raised out of " . $totalNeeded . " goal.\n";
         }
 
         # Close the file or wget can't write to it next time.
