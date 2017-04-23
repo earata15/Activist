@@ -29,6 +29,10 @@ $SearchStringFunded2 = "([0-9,]+)";
 #$SearchStringFunded3 = "\$(\d*,?\d*,?\d*)(k?)";
 $SearchStringFunded3 = "([0-9,kK]+)";
 
+# used to match and find when the last donation was. We pull links that haven't received any donations in the past 2 months.
+$SearchStringDonations = "supporter js-donation-content";
+#$SearchStringDonations2 = "supporter-time"\>([\d\sa-z]+)";
+
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
@@ -83,6 +87,8 @@ sub processURL
         # Assume not found
         my $found = 0;
         my $goal = 0;
+        my $lastDonation = 0;
+        my $donationInfo = "";
         my $funded = 0;
         my $totalNeeded = 0;
         # Go through the file one line at a time
@@ -144,6 +150,37 @@ sub processURL
                 $goal = 1;
             }
 
+            # capture most recent donation time, in the form of "8 days ago", "2 months ago", etc, as displayed on page
+            if(($lastDonation==1) && (m/supporter-time"\>([\d\sa-z]+)/)){
+                $lastDonation = 2;
+                my $donationTime = $1;
+                $donationInfo = "Last donation was " . $donationTime . "\n";    
+                my $good = 0;
+
+                if($donationTime =~ m/day/){
+                    $good = 1;
+                }
+                if($donationTime =~ m/month/){
+                    if($donationTime =~ m/([0-9]+)/){
+                        if($1<3){
+                            $good = 1;
+                        }
+                    }
+                }
+
+
+                if($good==1){
+                    $donationInfo = $donationInfo . "Last donation was within past three months.\n\n";
+                }else{
+                    $donationInfo = $donationInfo . "Last donation was NOT within past three months, need to remove.\n\n";
+                }
+            }
+
+            # once this line is reached we are in the donation section; set indicator variable lastDonation to 1
+            if(($lastDonation==0) && (m/$SearchStringDonations/)){
+                $lastDonation = 1;
+            }
+
             # See if we can match the Not Found search string
             if(m/$SearchStringOver/)
             {
@@ -172,6 +209,7 @@ sub processURL
                 }
 
             print $funded . " raised out of " . $totalNeeded . " goal.\n";
+            print $donationInfo;
         }
 
         # Close the file or wget can't write to it next time.
