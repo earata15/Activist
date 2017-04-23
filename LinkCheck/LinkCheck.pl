@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# snoopy.pl
+# linkcheck.pl
 #
 # A Perl script that takes a list of URLs from an array and tests to see if the
 # Search String exists at that location.
@@ -8,8 +8,18 @@
 # and wget from https://eternallybored.org/misc/wget/ 
 # Here are search strings that indicate different things.
 
+
 # This one holds the file name that populates our url array
 $InputFile = "urllist.txt";
+
+#this is the name of the file that will receive the results of linkcheck, sans the file extension
+$OutputFile = "LinkCheckOutput";
+
+#this is the name of the output directory that we can call or create is it doesn't exist. Createing this directory does not happen if the name is called and the directory doesn't exist. We have to do that seperatley
+$OutputDirectory = "archive/";
+
+#This is where we can add the fileextension to any files linkcheck produces
+$Extension = ".txt";
 
 #This one is returned if the campaign is not found.
 $SearchStringNotFound = "Campaign Not Found";
@@ -36,12 +46,27 @@ $SearchStringDonations = "supporter js-donation-content";
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
+# This subroutine calls the function localtime. This function produces 
+sub CreateTimeStamp
+{
+     #     0    1    2     3     4    5     6     7     8
+     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+
+     $year += 1900;
+
+     $mon += 1;
+
+     $TimeStamp = "$year.$mon.$mday.$hour.$min.$sec";	
+
+	 return $TimeStamp
+	 
+	 }
 
 
 sub readUrlList
 {
-    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error the perl has for why the file won't open.
-	open LISTFILE, "< $InputFile" or die "cantopen$inputfile: $!";
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
+	open LISTFILE, "< $InputFile" or die "cantopen$InputFile: $!";
 	
     # Here is the array of URLs in it.
 	
@@ -57,6 +82,12 @@ sub readUrlList
 # This is a subroutine that processes each URL
 sub processURL
 {
+    #we open the file we are going to write our results to and signify we are writing to is with the '>' sign
+	#in front of the outfile variable we are calling, we add the outputDirectory
+	#add the timestamp so that each time we call Linkcheck, then we write to a new text file
+	#be sure to add the extension variable, otherwise no .txt file will be written
+    open OUTFILE, ">> $OutputDirectory$OutputFile$TimeStamp$Extension" or die "cantopen $OutPutDirectory$OutputFile$TimeStamp$Extension: $!";
+    
     # The parameter passed in to this function is the URL being tested.
     my $url = shift;
 
@@ -78,7 +109,7 @@ sub processURL
     if($?)
     {
         # We got some kind of error. Assume its 404.
-        print "Dead Link: $url\n";
+        print OUTFILE "Dead Link: $url\n";
     }
     else
     {
@@ -97,7 +128,7 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringNotFound/)
             {
-                print "Not Found: $url\n";
+                print OUTFILE "Not Found: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
@@ -184,7 +215,7 @@ sub processURL
             # See if we can match the Not Found search string
             if(m/$SearchStringOver/)
             {
-                print "Over: $url\n";
+                print OUTFILE "Over: $url\n";
                 # Remember that we matched something
                 $found = 1;
                 # Exit the while loop.
@@ -201,32 +232,41 @@ sub processURL
         # If we found no match, must be active
         if(not $found)
         {
-            print "Active: $url\n";
+            print OUTFILE "Active: $url\n";
             if($funded>0 && $funded>=$totalNeeded){
-                print "Campaign Fully Funded\n";
+                print OUTFILE "Campaign Fully Funded\n";
             }else{
-                print "Campaign still needs funding. ";
+                print OUTFILE "Campaign still needs funding. ";
                 }
 
-            print $funded . " raised out of " . $totalNeeded . " goal.\n";
-            print $donationInfo;
+            print OUTFILE $funded . " raised out of " . $totalNeeded . " goal.\n";
+            print OUTFILE $donationInfo;
         }
 
         # Close the file or wget can't write to it next time.
         close URLFILE;
-    }    
-}
+        
+        #close the file we are writing to so you can open it outside the script
+        close OUTFILE;
+    }
+}    
 
 sub printResults
 {
-    # IF you want, you can collect stats in the above loop and
+	
+	# IF you want, you can collect stats in the above loop and
     # print them here.
     print "All Done.\n";
 }
 
+
 # Here is the "main" function that does all the work
 sub main
 {
+	# this calls the createtimestamp subroutine and creates the timestamp variable
+	CreateTimeStamp ();
+	#mkdir creates a directory for our files to dump into
+	mkdir $OutputDirectory;
 	readUrlList();
     # This counts the number of urls.
     $urlCount = 0;
@@ -237,6 +277,7 @@ sub main
         processURL($url);
     }
     printResults();
+	
 }
 
 
