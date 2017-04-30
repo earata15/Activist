@@ -46,31 +46,33 @@ $SearchStringDonations = "supporter js-donation-content";
 # This is the name of a temporary file for the file wget gets.
 $tempfile = "wgetGot-";
 
-# This subroutine calls the function localtime. This function produces 
+# This subroutine calls the function localtime. This function produces a variable representing the time down to the second. 
+# We can use this variable to add to our filename for the output file, especially if we are creating an archive of output files.
 sub CreateTimeStamp
 {
-     #     0    1    2     3     4    5     6     7     8
+# First we call the perl command localtime. Localtime populates a bunch of local variables that can only be called inside this one subroutine.
+# use "my () = " to define local variables.
+#     0    1    2     3     4    5     6     7     8
      my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-
+# we have to add 1900 to the year variable
      $year += 1900;
-
+#we have to add 1 to the month variable
      $mon += 1;
-
+#here we define a new global variable called $TimeStamp. This variable has to be defined *after* localtime defines the local variables.
      $TimeStamp = "$year.$mon.$mday.$hour.$min.$sec";	
 
+# instead of calling the variable $TimeStamp, if we want we cna also call the subroutine. It will return the value for the $TimeStamp varaible.
 	 return $TimeStamp
-	 
 	 }
-
 
 sub readUrlList
 {
-    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile) and if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
+    # this line defines the inputfile's handle, opens the input file (<) by calling the file variable ($inputfile)
+    # if it can't open the file it dies. The die command then allows you to populate a literal string. $! then populates any additional error perl has for why the file won't open.
 	open LISTFILE, "< $InputFile" or die "cantopen$InputFile: $!";
 	
-    # Here is the array of URLs in it.
-	
-	
+    # Here we ask the chomp command to remove the newline charcter from each line in the file. This allow wget to process the links
+    # We also set @URLlist to point at the input file's handle. The parenthesis set what will be targeted by chomp 
     chomp(@URLlist = <LISTFILE>);
 	#closes the file
     close LISTFILE; 
@@ -87,6 +89,8 @@ sub processURL
 	#add the timestamp so that each time we call Linkcheck, then we write to a new text file
 	#be sure to add the extension variable, otherwise no .txt file will be written
     open OUTFILE, ">> $OutputDirectory$OutputFile$TimeStamp$Extension" or die "cantopen $OutPutDirectory$OutputFile$TimeStamp$Extension: $!";
+        # we can use the handle OUTFILE anytime throughout the subroutine to refer to the above collection of variables
+	# specifically, we will use it to tell subroutine elements to print to that handle
     
     # The parameter passed in to this function is the URL being tested.
     my $url = shift;
