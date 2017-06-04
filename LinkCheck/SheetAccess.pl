@@ -6,6 +6,8 @@ use Net::Google::Spreadsheets;
 use Net::Google::DataAPI::Auth::OAuth2;
 use Net::OAuth2::AccessToken;
 use Storable;
+use Spreadsheet::WriteExcel;
+
 
 ## Authentication code based on example from gist at 
 ##  https://gist.github.com/hexaddikt/6738247
@@ -52,10 +54,19 @@ my $worksheet = $spreadsheet->worksheet(
 }
 );
 
-# Here's where we can actually start doing stuff. For now it's simple.
-# To test cell reading I just accessed a random cell and printed its contents.
-# Feel free to change the cell and see if it's working for you.
+# Here's where we can actually start doing stuff. 
 
-my $cell = $worksheet->cell({col => 3, row => 8});
+# Create a new Excel workbook
+my $workbook = Spreadsheet::WriteExcel->new('transfer.xls');
+# Add a worksheet
+my $excelsheet = $workbook->add_worksheet();
 
-print $cell->content;
+#loop through cells in google sheet and write to excel worksheet
+my $i,$j;
+for($i=1;$i<10;$i++){
+    for($j=1;$j<60;$j++){
+        my $cell = $worksheet->cell({col => $i, row => $j});
+        my $content = $cell->content;
+        $excelsheet->write($j, $i, $content);
+    }
+}
