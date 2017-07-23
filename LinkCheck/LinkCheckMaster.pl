@@ -322,7 +322,7 @@ sub main
     # access Prototype List spreadsheet and store in variable $spreadsheet
     $spreadsheet = $service->spreadsheet(
     {
-        title => 'PrototypeCopy'
+        title => 'Prototype List'
     }
     );
 
