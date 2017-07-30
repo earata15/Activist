@@ -2,6 +2,10 @@
 
 # rough sketch
 
+# prompt User for a list of search terms;
+# search GoFundMe using given search terms and produce an Excel document containing relevant info from search results:
+# name of campaign, URL to campaign, location, funding goal, current funds
+
 use Term::Prompt;
 
 $urlfile = "";
