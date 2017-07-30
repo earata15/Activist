@@ -8,21 +8,21 @@ $urlfile = "";
 
 sub searchUrl
 {
-	# grab HTML from search results page and create a list of URL's of pages for us to go through
-	my $url = shift;
-	# pasted in wget command from Snoopy.pl / LinkCheck.pl... will change this to include our URL and otherwise suit our needs
+    # grab HTML from search results page and create a list of URL's of pages for us to go through
+    my $url = shift;
+
     my $cmd = "wget -q -O $urlfile $url";
     
     # Print the command for debugging.
-    print "running $cmd\n\n";
-    
-    # We use the back tics to run the command.
+    print "running $cmd\n\n";    
+    # run the command.
     `$cmd`;
 
     if($?)
     {
         # We got some kind of error. Assume its 404.
-        print OUTFILE "Dead Link: $url\n";
+	# probably change this at some point to write to a file instead of console
+        print "Dead Link: $url\n";
     }
     else
     {
